@@ -112,6 +112,6 @@ echo -e "$ENROLLMENT_PASSWORD\n$ENROLLMENT_PASSWORD" | mokutil --import "$SECURE
 EOF
 
 gtk-update-icon-cache -f /usr/share/icons/hicolor/ 2>/dev/null || true
-echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+echo 'LANG=en_US.UTF-8' >/etc/locale.conf
 ksflatten -c /usr/share/anaconda/interactive-defaults.ks 2>/dev/null || true
 ksvalidator /usr/share/anaconda/interactive-defaults.ks 2>/dev/null || true

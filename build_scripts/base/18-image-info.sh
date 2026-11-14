@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -ouex pipefail
 
-IMAGE_PRETTY_NAME="Astralius"
 IMAGE_NAME="${IMAGE_NAME:-astralius}"
 IMAGE_VENDOR="${IMAGE_VENDOR:-lyranile}"
 BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-silverblue-main}"
