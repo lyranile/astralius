@@ -52,11 +52,13 @@ hidden_webui_pages =
 EOF
 
 desktop-file-edit \
-	--set-key=Icon --set-value=/usr/share/icons/hicolor/scalable/apps/org.gnome.Settings.svg \
+	--set-key=Icon --set-value=/usr/share/icons/hicolor/scalable/apps/astralius-installer.svg \
 	--set-key=StartupWMClass --set-value=slitherer \
-	/usr/share/applications/liveinst.desktop 2>/dev/null || true
+	/usr/share/applications/liveinst.desktop
 
 tee -a /usr/share/anaconda/interactive-defaults.ks <<EOF
+lang en_US.UTF-8
+keyboard --xlayouts='us'
 ostreecontainer --url=$IMAGE_REF:$IMAGE_TAG --transport=containers-storage --no-signature-verification
 %include /usr/share/anaconda/post-scripts/install-configure-upgrade.ks
 %include /usr/share/anaconda/post-scripts/install-flatpaks.ks
@@ -109,5 +111,7 @@ echo -e "$ENROLLMENT_PASSWORD\n$ENROLLMENT_PASSWORD" | mokutil --import "$SECURE
 %end
 EOF
 
+gtk-update-icon-cache -f /usr/share/icons/hicolor/ 2>/dev/null || true
+echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 ksflatten -c /usr/share/anaconda/interactive-defaults.ks 2>/dev/null || true
 ksvalidator /usr/share/anaconda/interactive-defaults.ks 2>/dev/null || true

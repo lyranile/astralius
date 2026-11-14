@@ -1,0 +1,4 @@
+# Default settings for useradd
+SHELL=/bin/zsh
+SKEL=/etc/skel
+CREATE_MAIL_SPOOL=yes

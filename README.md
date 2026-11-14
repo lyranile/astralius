@@ -33,9 +33,9 @@ podman build --build-arg NVIDIA=true -t astralius-nvidia-open:latest -f Containe
 
 ## Live ISO
 
-See `iso/` and `disk_config/iso.toml`. Build with:
+See `iso/` (Titanoboa pipeline). Build with:
 ```bash
-just build-iso
+cd iso && podman build --build-arg BASE_IMAGE=ghcr.io/lyranile/astralius:latest -t astralius-iso -f Containerfile .
 ```
 
 ## Homebrew
