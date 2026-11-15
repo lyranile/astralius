@@ -1,13 +1,13 @@
 set dotenv-filename := "image-template.env"
 set dotenv-load
 
-export image_name := env_var("IMAGE_NAME")
-export repo_organization := env_var("REPO_ORGANIZATION")
-export image_desc := env_var("IMAGE_DESC")
-export image_keywords := env_var("IMAGE_KEYWORDS")
-export image_logo_url := env_var("IMAGE_LOGO_URL")
-export default_tag := env_var("DEFAULT_TAG")
-export bib_image := env_var("BIB_IMAGE")
+export image_name := env("IMAGE_NAME")
+export repo_organization := env("REPO_ORGANIZATION")
+export image_desc := env("IMAGE_DESC")
+export image_keywords := env("IMAGE_KEYWORDS")
+export image_logo_url := env("IMAGE_LOGO_URL")
+export default_tag := env("DEFAULT_TAG")
+export bib_image := env("BIB_IMAGE")
 
 alias build-vm := build-qcow2
 alias rebuild-vm := rebuild-qcow2
@@ -99,6 +99,9 @@ build $target_image=image_name $tag=default_tag:
     set -euox pipefail
 
     BUILD_ARGS=()
+    if [[ "${NVIDIA:-false}" == "true" ]]; then
+        BUILD_ARGS+=("--build-arg" "NVIDIA=true")
+    fi
     LABELS=()
     if [[ -z "$(git status -s)" ]]; then
         GIT_SHA=$(git rev-parse --short HEAD)
@@ -347,10 +350,6 @@ build-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_bui
 [group('Build Virtal Machine Image')]
 build-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "raw" "disk_config/disk.toml")
 
-# Build an ISO virtual machine image
-[group('Build Virtal Machine Image')]
-build-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "iso" "disk_config/iso.toml")
-
 # Rebuild a QCOW2 virtual machine image
 [group('Build Virtal Machine Image')]
 rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "qcow2" "disk_config/disk.toml")
@@ -358,10 +357,6 @@ rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_r
 # Rebuild a RAW virtual machine image
 [group('Build Virtal Machine Image')]
 rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "disk_config/disk.toml")
-
-# Rebuild an ISO virtual machine image
-[group('Build Virtal Machine Image')]
-rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "iso" "disk_config/iso.toml")
 
 # Run a virtual machine with the specified image type and configuration
 _run-vm $target_image $tag $type $config:
@@ -380,7 +375,7 @@ _run-vm $target_image $tag $type $config:
     fi
 
     # Determine an available port to use
-    port=8006
+    port=8009
     while grep -q :${port} <<< $(ss -tunalp); do
         port=$(( port + 1 ))
     done
@@ -413,9 +408,7 @@ run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_ru
 [group('Run Virtal Machine')]
 run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "disk_config/disk.toml")
 
-# Run a virtual machine from an ISO
-[group('Run Virtal Machine')]
-run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "disk_config/iso.toml")
+# (live ISO runs via Titanoboa, see iso/Containerfile)
 
 # Run a virtual machine using systemd-vmspawn
 [group('Run Virtal Machine')]
