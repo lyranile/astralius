@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+echo "::group:: ===$(basename "$0")==="
 set -eoux pipefail
 
 systemctl disable tailscaled.service 2>/dev/null || true
@@ -12,3 +13,4 @@ systemctl --global disable podman-auto-update.timer 2>/dev/null || true
 systemctl --global disable ublue-user-setup.service 2>/dev/null || true
 
 rm -f /usr/share/applications/dev.getaurora.system-update.desktop
+echo "::endgroup::"

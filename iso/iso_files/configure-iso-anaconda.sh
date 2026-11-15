@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+echo "::group:: ===$(basename "$0")==="
 
 set -eoux pipefail
 
@@ -52,7 +53,7 @@ hidden_webui_pages =
 EOF
 
 desktop-file-edit \
-	--set-key=Icon --set-value=/usr/share/icons/hicolor/scalable/apps/astralius-installer.svg \
+	--set-key=Icon --set-value=astralius-installer \
 	--set-key=StartupWMClass --set-value=slitherer \
 	/usr/share/applications/liveinst.desktop
 
@@ -67,7 +68,7 @@ EOF
 
 tee /usr/share/anaconda/post-scripts/install-configure-upgrade.ks <<EOF
 %post --erroronfail
-bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry $IMAGE_REF:$IMAGE_TAG
+bootc switch --mutate-in-place --transport registry $IMAGE_REF:$IMAGE_TAG
 %end
 EOF
 
@@ -115,3 +116,4 @@ gtk-update-icon-cache -f /usr/share/icons/hicolor/ 2>/dev/null || true
 echo 'LANG=en_US.UTF-8' >/etc/locale.conf
 ksflatten -c /usr/share/anaconda/interactive-defaults.ks 2>/dev/null || true
 ksvalidator /usr/share/anaconda/interactive-defaults.ks 2>/dev/null || true
+echo "::endgroup::"

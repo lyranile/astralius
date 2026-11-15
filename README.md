@@ -17,6 +17,7 @@ Secure boot is supported by default. After first installation you will be prompt
 Enter the password `universalblue` when prompted.
 
 Manual enrollment:
+
 ```bash
 sudo mokutil --timeout -1
 sudo mokutil --import /etc/pki/akmods/certs/akmods-ublue.der
@@ -34,6 +35,7 @@ podman build --build-arg NVIDIA=true -t astralius-nvidia-open:latest -f Containe
 ## Live ISO
 
 See `iso/` (Titanoboa pipeline). Build with:
+
 ```bash
 cd iso && podman build --build-arg BASE_IMAGE=ghcr.io/lyranile/astralius:latest -t astralius-iso -f Containerfile .
 ```

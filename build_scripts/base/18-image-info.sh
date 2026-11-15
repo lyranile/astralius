@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+echo "::group:: ===$(basename "$0")==="
 set -ouex pipefail
 
 IMAGE_NAME="${IMAGE_NAME:-astralius}"
@@ -28,3 +29,4 @@ cat >"${IMAGE_INFO}" <<EOF
 EOF
 
 sed -i "s|^EFIDIR=.*|EFIDIR=\"fedora\"|" /usr/sbin/grub2-switch-to-blscfg 2>/dev/null || true
+echo "::endgroup::"

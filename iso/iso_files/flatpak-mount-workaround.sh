@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+echo "::group:: ===$(basename "$0")==="
 set -eoux pipefail
 
 cat >/usr/lib/systemd/system/var-lib-flatpak.mount <<'EOF'
@@ -21,3 +22,4 @@ d /run/overlay/flatpak.work 0755 - - -
 EOF
 
 systemctl enable var-lib-flatpak.mount
+echo "::endgroup::"
