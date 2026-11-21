@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 echo "::group:: ===$(basename "$0")==="
-# Prepare the build environment for Astralius (GNOME/Silverblue based)
-
 set -eoux pipefail
 
 cp /etc/dnf/dnf.conf /etc/dnf/dnf.conf.bak

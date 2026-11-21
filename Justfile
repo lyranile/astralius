@@ -358,6 +358,15 @@ rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_r
 [group('Build Virtal Machine Image')]
 rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "disk_config/disk.toml")
 
+# Build a bootable ISO using Bootc Image Builder (BIB)
+# Uses zirconium-style TOML customizations with installer modules
+[group('Build Virtal Machine Image')]
+build-iso $target_image=("localhost/" + image_name) $tag=default_tag $config="disk_config/iso.toml": && (_build-bib target_image tag "iso" config)
+
+# Rebuild a bootable ISO using Bootc Image Builder (BIB)
+[group('Build Virtal Machine Image')]
+rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag $config="disk_config/iso.toml": && (_rebuild-bib target_image tag "iso" config)
+
 # Run a virtual machine with the specified image type and configuration
 _run-vm $target_image $tag $type $config:
     #!/usr/bin/env bash
@@ -408,7 +417,9 @@ run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_ru
 [group('Run Virtal Machine')]
 run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "disk_config/disk.toml")
 
-# (live ISO runs via Titanoboa, see iso/Containerfile)
+# Run a virtual machine from an ISO image
+[group('Run Virtal Machine')]
+run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag $config="disk_config/iso.toml": && (_run-vm target_image tag "iso" config)
 
 # Run a virtual machine using systemd-vmspawn
 [group('Run Virtal Machine')]

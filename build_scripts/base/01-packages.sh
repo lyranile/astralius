@@ -7,6 +7,7 @@ dnf makecache --refresh
 FEDORA_PACKAGES=(
 	adwaita-fonts-all
 	adw-gtk3-theme
+	bibata-cursor-theme
 	fastfetch
 	file-roller-nautilus
 	git
@@ -15,13 +16,18 @@ FEDORA_PACKAGES=(
 	gnome-tweaks
 	nautilus
 	nautilus-extensions
+	os-prober
 	papirus-icon-theme
 	plymouth
+	podman
 	polkit
 	sushi
+	starship
 	wl-clipboard
 	xdg-terminal-exec
 	zsh
+	ghostty-nautilus
+	papers-nautilus
 )
 
 REMOVED_PACKAGES=(
@@ -45,20 +51,15 @@ dnf -y install \
 
 dnf -y remove "${REMOVED_PACKAGES[@]}"
 
-# Ghostty via COPR
 dnf5 -y copr enable scottames/ghostty
 dnf -y install --setopt=install_weak_deps=False ghostty
 dnf5 -y copr disable scottames/ghostty
 
-# gnome-rounded-blur and uupd from ublue-os/packages
 dnf5 -y copr enable ublue-os/packages
 dnf -y install --setopt=install_weak_deps=False gnome-rounded-blur uupd
 dnf5 -y copr disable ublue-os/packages
 
-# Enable Flathub system-wide (Aurora/Bluefin first-boot preinstall model)
 curl --retry 3 -Lo /usr/share/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
-
-# Flatpaks are installed on first boot by flatpak-preinstall.service from generated .preinstall files
 
 if [[ "${IMAGE_FLAVOR:-}" == "dx" ]]; then
 	/ctx/build_scripts/dx/00-dx.sh 2>/dev/null || true
