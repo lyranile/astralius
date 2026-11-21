@@ -20,3 +20,8 @@ enable = [
 disable = [
   "org.fedoraproject.Anaconda.Modules.Subscription",
 ]
+
+[customizations.iso]
+volume_id = "Astralius"
+application_id = "astralius-nvidia-open"
+publisher = "lyranile"

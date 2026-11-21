@@ -34,15 +34,23 @@ podman build --build-arg NVIDIA=true -t astralius-nvidia-open:latest -f Containe
 
 ## Bootable ISO
 
-Build a bootable ISO using bootc-image-builder with zirconium-style TOML customizations:
+Build a bootable ISO using bootc-image-builder with zirconium-style TOML customizations.
+
+The container image must be published to GHCR first, then the ISO is built from the
+published image using a throw-away build image that adds Fedora repos for DNF to
+resolve boot packages (grub, shim, kernel, installer tools):
 
 ```bash
-just build-iso astralius latest
-# NVIDIA variant ISO
-just build-iso astralius-nvidia-open latest --config disk_config/iso-nvidia.toml
+# 1. Build and push the container image
+just build astralius latest
+podman push localhost/astralius:latest ghcr.io/lyranile/astralius:latest
+
+# 2. Build the ISO from the published image (via CI or manually)
+# CI: .github/workflows/build-disk.yaml (triggered on push to disk_config/**)
+# Manual: requires the image to be published to GHCR first
 ```
 
-The ISO customization lives in `disk_config/iso.toml` (and `disk_config/iso-nvidia.toml` for NVIDIA) using `[customizations.installer.modules]` to enable/disable Anaconda installer modules and `[customizations.installer.kickstart]` for the bootc switch kickstart.
+The ISO customization lives in `disk_config/iso.toml` (and `disk_config/iso-nvidia.toml` for NVIDIA) using `[customizations.installer.modules]` to enable/disable Anaconda installer modules and `[customizations.installer.kickstart]` for the bootc switch kickstart. `[customizations.iso]` sets volume metadata.
 
 Bootc install settings are in `system_files/usr/lib/bootc/10-astralius-install.toml` (`root-fs-type = "btrfs"`).
 

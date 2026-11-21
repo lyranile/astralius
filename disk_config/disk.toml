@@ -2,22 +2,6 @@
 mountpoint = "/"
 minsize = "20 GiB"
 
-[customizations.image]
-name = "astralius"
-
-[customizations.kernel]
-args = ["quiet rhgb"]
-
-[customizations.services]
-enable = [
-  "flatpak-preinstall.service",
-  "uupd.timer",
-  "brew-setup.service",
-  "brew-update.timer",
-  "brew-upgrade.timer",
-  "podman.socket",
-]
-
 [customizations.installer.modules]
 enable = [
   "org.fedoraproject.Anaconda.Modules.Localization",

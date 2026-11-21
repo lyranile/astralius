@@ -10,6 +10,7 @@ FEDORA_PACKAGES=(
 	bibata-cursor-theme
 	fastfetch
 	file-roller-nautilus
+	ghostty
 	git
 	git-credential-libsecret
 	glibc-langpack-en
@@ -45,15 +46,26 @@ REMOVED_PACKAGES=(
 	yelp
 )
 
+# Terra repo (fyralabs) - needed for bibata-cursor-theme, starship, ghostty-nautilus, papers-nautilus
+mkdir -p /etc/pki/rpm-gpg
+curl --retry 3 -Lo /etc/pki/rpm-gpg/RPM-GPG-KEY-terra45 https://repos.fyralabs.com/terra45/key.asc
+cat > /etc/yum.repos.d/terra.repo <<'EOF'
+[terra]
+name=Terra $releasever
+metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever&arch=$basearch
+metadata_expire=6h
+type=rpm
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-terra45
+repo_gpgcheck=0
+enabled=1
+EOF
+
 dnf -y install \
 	--setopt=install_weak_deps=False \
 	"${FEDORA_PACKAGES[@]}"
 
 dnf -y remove "${REMOVED_PACKAGES[@]}"
-
-dnf5 -y copr enable scottames/ghostty
-dnf -y install --setopt=install_weak_deps=False ghostty
-dnf5 -y copr disable scottames/ghostty
 
 dnf5 -y copr enable ublue-os/packages
 dnf -y install --setopt=install_weak_deps=False gnome-rounded-blur uupd

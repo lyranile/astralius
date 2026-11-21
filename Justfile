@@ -359,13 +359,56 @@ rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_r
 rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "disk_config/disk.toml")
 
 # Build a bootable ISO using Bootc Image Builder (BIB)
-# Uses zirconium-style TOML customizations with installer modules
+# Fedora repos and GPG keys are in system_files/ and ship with the image,
+# so BIB can resolve boot packages directly from the published image.
 [group('Build Virtal Machine Image')]
-build-iso $target_image=("localhost/" + image_name) $tag=default_tag $config="disk_config/iso.toml": && (_build-bib target_image tag "iso" config)
+build-iso $target_image=("localhost/" + image_name) $tag=default_tag:
+    #!/usr/bin/env bash
+    set -eoux pipefail
+
+    sudo podman run \
+        --rm \
+        -i \
+        --privileged \
+        --pull=newer \
+        --net=host \
+        --security-opt label=type=unconfined_t \
+        -v ./disk_config/iso.toml:/config.toml:ro \
+        -v $(pwd)/output:/output \
+        -v /var/lib/containers/storage:/var/lib/containers/storage \
+        quay.io/centos-bootc/bootc-image-builder@sha256:dab86ee6b46dcade411b37f4e70b07d93b6a06da0dbfec6fe89247a220e0d9f8 \
+        --type iso \
+        --rootfs btrfs \
+        --use-librepo=True \
+        --installer-payload-ref "${target_image}:${tag}" \
+        "${target_image}:${tag}"
+
+    sudo chown -R $USER:$USER output
 
 # Rebuild a bootable ISO using Bootc Image Builder (BIB)
 [group('Build Virtal Machine Image')]
-rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag $config="disk_config/iso.toml": && (_rebuild-bib target_image tag "iso" config)
+rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag:
+    #!/usr/bin/env bash
+    set -eoux pipefail
+
+    sudo podman run \
+        --rm \
+        -i \
+        --privileged \
+        --pull=newer \
+        --net=host \
+        --security-opt label=type=unconfined_t \
+        -v ./disk_config/iso.toml:/config.toml:ro \
+        -v $(pwd)/output:/output \
+        -v /var/lib/containers/storage:/var/lib/containers/storage \
+        quay.io/centos-bootc/bootc-image-builder@sha256:dab86ee6b46dcade411b37f4e70b07d93b6a06da0dbfec6fe89247a220e0d9f8 \
+        --type iso \
+        --rootfs btrfs \
+        --use-librepo=True \
+        --installer-payload-ref "${target_image}:${tag}" \
+        "${target_image}:${tag}"
+
+    sudo chown -R $USER:$USER output
 
 # Run a virtual machine with the specified image type and configuration
 _run-vm $target_image $tag $type $config:
