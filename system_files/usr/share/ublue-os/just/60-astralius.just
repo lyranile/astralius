@@ -11,7 +11,7 @@ enroll-secure-boot-key:
 install-system-flatpaks:
     #!/usr/bin/bash
     set -eoux pipefail
-    FLATPAK_LIST=/usr/share/astralius/flatpaks.list
+    FLATPAK_LIST=/usr/share/ublue-os/flatpaks.list
     if [[ -f "${FLATPAK_LIST}" ]]; then
         flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo
         while IFS= read -r app; do

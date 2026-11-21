@@ -55,17 +55,10 @@ dnf5 -y copr enable ublue-os/packages
 dnf -y install --setopt=install_weak_deps=False gnome-rounded-blur uupd
 dnf5 -y copr disable ublue-os/packages
 
-# Enable Flathub system-wide (Aurora style)
+# Enable Flathub system-wide (Aurora/Bluefin first-boot preinstall model)
 curl --retry 3 -Lo /usr/share/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
 
-# Install all flatpaks from the image's flatpak list (HOME=/tmp avoids /root symlink issues)
-FLATPAK_LIST="/ctx/system_files/usr/share/astralius/flatpaks.list"
-if [[ -f "${FLATPAK_LIST}" ]]; then
-	while IFS= read -r app; do
-		[[ -z "${app}" || "${app}" =~ ^[[:space:]]*# ]] && continue
-		HOME=/tmp flatpak install -y --noninteractive flathub "${app}"
-	done <"${FLATPAK_LIST}"
-fi
+# Flatpaks are installed on first boot by flatpak-preinstall.service from generated .preinstall files
 
 if [[ "${IMAGE_FLAVOR:-}" == "dx" ]]; then
 	/ctx/build_scripts/dx/00-dx.sh 2>/dev/null || true

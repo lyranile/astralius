@@ -11,13 +11,7 @@ mkdir -p "$(realpath /root)"
 
 mount -o remount,rw /proc/sys
 
-if [[ -f /usr/share/astralius/flatpaks.list ]]; then
-	echo "Installing flatpaks..."
-	curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
-	xargs -r flatpak install -y --noninteractive < /usr/share/astralius/flatpaks.list || true
-	rm -rf /flatpak-list
-	flatpak list --columns=runtime,app
-fi
+# ISO uses the image's flatpak preinstall on first boot; no build-time flatpaks here
 
 if [[ -n "${BASE_IMAGE:-}" ]]; then
 	podman pull "${BASE_IMAGE}"
@@ -59,7 +53,6 @@ systemctl enable livesys.service livesys-late.service
 export BASE_IMAGE="${BASE_IMAGE:-}"
 bash \
 	"$SCRIPT_DIR/undo-image.sh" &&
-	"$SCRIPT_DIR/flatpak-mount-workaround.sh" &&
 	"$SCRIPT_DIR/gnome-tweaks.sh" &&
 	"$SCRIPT_DIR/workarounds.sh" &&
 	"$SCRIPT_DIR/configure-iso-anaconda.sh" &&
@@ -86,23 +79,7 @@ rm -f /etc/localtime
 systemd-firstboot --timezone UTC
 
 mkdir -p /var/tmp
-cat >/etc/systemd/system/var-tmp.mount <<'EOF'
-[Unit]
-Description=Larger tmpfs for /var/tmp on live system
-
-[Mount]
-What=tmpfs
-Where=/var/tmp
-Type=tmpfs
-Options=size=50%,nr_inodes=1m,x-systemd.graceful-option=usrquota
-
-[Install]
-WantedBy=local-fs.target
-EOF
 systemctl enable var-tmp.mount
-
-mkdir -p /usr/lib/bootc-image-builder
-cp "$SCRIPT_DIR/iso.yaml" /usr/lib/bootc-image-builder/iso.yaml
 
 dnf clean all
 echo "::endgroup::"

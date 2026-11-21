@@ -19,16 +19,19 @@ XDG_CONFIG_HOME=/usr/share/applications xdg-mime default io.github.kolunmi.Bazaa
 # Remove gnome-ssh-askpass
 rm -f /etc/profile.d/gnome-ssh-askpass.{csh,sh}
 
-# Generate flatpak preinstall file from the image's flatpak list
-FLATPAK_LIST=/usr/share/astralius/flatpaks.list
-PREINSTALL_DIR=/etc/flatpak/preinstall.d
+# Generate per-app flatpak preinstall files from the canonical list (Aurora/Bluefin use /usr/share/flatpak/preinstall.d)
+FLATPAK_LIST=/usr/share/ublue-os/flatpaks.list
+PREINSTALL_DIR=/usr/share/flatpak/preinstall.d
 mkdir -p "${PREINSTALL_DIR}"
-PREINSTALL_FILE="${PREINSTALL_DIR}/astralius.preinstall"
-: > "${PREINSTALL_FILE}"
 if [[ -f "${FLATPAK_LIST}" ]]; then
+    # Remove stale Astralius-managed preinstall files only (leave anything else the base image ships)
     while IFS= read -r app; do
         [[ -z "${app}" || "${app}" =~ ^[[:space:]]*# ]] && continue
-        printf '[Flatpak Preinstall %s]\nBranch=stable\n\n' "${app}" >> "${PREINSTALL_FILE}"
+        rm -f "${PREINSTALL_DIR}/${app}.preinstall"
+    done < "${FLATPAK_LIST}"
+    while IFS= read -r app; do
+        [[ -z "${app}" || "${app}" =~ ^[[:space:]]*# ]] && continue
+        printf '[Flatpak Preinstall %s]\nBranch=stable\nIsRuntime=false\n' "${app}" > "${PREINSTALL_DIR}/${app}.preinstall"
     done < "${FLATPAK_LIST}"
 fi
 
