@@ -1,7 +1,8 @@
 #!/usr/bin/bash
+echo "::group:: ===$(basename "$0")==="
 set -eoux pipefail
 
-systemctl enable podman.socket
-systemctl preset brew-setup.service brew-update.timer brew-upgrade.timer 2>/dev/null || true
-systemctl enable flatpak-preinstall.service 2>/dev/null || true
-systemctl enable ublue-nvidia-flatpak-runtime-sync.service 2>/dev/null || true
+systemctl preset-all
+systemctl --global preset-all
+
+echo "::endgroup::"

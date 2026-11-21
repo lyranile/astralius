@@ -1,4 +1,5 @@
 #!/usr/bin/bash
+echo "::group:: ===$(basename "$0")==="
 # Prepare the build environment for Astralius (GNOME/Silverblue based)
 
 set -eoux pipefail
@@ -8,3 +9,4 @@ dnf config-manager setopt keepcache=1 timeout=60
 
 dnf config-manager setopt fedora-multimedia.priority=90
 dnf config-manager disable fedora-cisco-openh264
+echo "::endgroup::"
