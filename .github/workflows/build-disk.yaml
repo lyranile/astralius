@@ -34,6 +34,8 @@ jobs:
       fail-fast: false
       matrix:
         disk-type: ["qcow2", "iso", "iso-nvidia"]
+    if: |
+      matrix.disk-type != 'iso-nvidia' || github.event_name != 'pull_request'
     permissions:
       contents: read
       packages: read
@@ -54,6 +56,7 @@ jobs:
       - name: Install dependencies
         if: inputs.platform == 'arm64'
         run: |
+          set -x
           sudo apt update -y
           sudo apt install -y \
             podman

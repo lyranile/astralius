@@ -49,7 +49,7 @@ REMOVED_PACKAGES=(
 # Terra repo (fyralabs) - needed for bibata-cursor-theme, starship, ghostty-nautilus, papers-nautilus
 mkdir -p /etc/pki/rpm-gpg
 curl --retry 3 -Lo /etc/pki/rpm-gpg/RPM-GPG-KEY-terra45 https://repos.fyralabs.com/terra45/key.asc
-cat > /etc/yum.repos.d/terra.repo <<'EOF'
+cat >/etc/yum.repos.d/terra.repo <<'EOF'
 [terra]
 name=Terra $releasever
 metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever&arch=$basearch
