@@ -1,0 +1,6 @@
+enable flatpak-preinstall.service
+enable uupd.timer
+enable brew-setup.service
+enable brew-update.timer
+enable brew-upgrade.timer
+enable podman.socket

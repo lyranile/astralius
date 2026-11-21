@@ -1,6 +1,36 @@
+# Environment & secrets
+!image-template.env
+*.env
 cosign.key
-_build_*
-output
-_build-*/**
-*_chunkah_*
-*_rpm-ostree_*
+
+# Build artifacts
+_build*
+changelog.md
+manifest*.json
+output/
+result*
+sbom_out
+
+# Container & VM images
+*.img
+*.iso
+*.oci
+*.qcow2
+*.raw
+*.sbom
+*.tar
+*.tar.gz
+*.tar.zst
+
+# Temporary & cache
+*.tmp
+*.log
+.backup/
+.buildah/
+.cache/
+.podman/
+temp/
+tmp/
+
+# Devcontainer
+devcontainer

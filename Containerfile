@@ -1,11 +1,9 @@
-# Allow build scripts to be referenced without being copied into the final image
 FROM ghcr.io/ublue-os/brew:latest AS brew
 
 FROM scratch AS ctx
 COPY build_scripts /build_scripts
 COPY system_files /system_files
 
-# Base Image (GNOME / Silverblue)
 FROM ghcr.io/ublue-os/silverblue-main:latest AS base
 
 ARG IMAGE_NAME=astralius
@@ -25,10 +23,8 @@ ENV SHA_HEAD_SHORT=${SHA_HEAD_SHORT}
 ENV NVIDIA=${NVIDIA}
 ENV BASE_IMAGE_NAME=silverblue-main
 
-# Make helper scripts available
 ENV PATH="/tmp/scripts/helpers:${PATH}"
 
-### MODIFICATIONS - networked stage
 RUN --mount=type=tmpfs,dst=/boot \
     --mount=type=tmpfs,dst=/var \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
@@ -36,17 +32,14 @@ RUN --mount=type=tmpfs,dst=/boot \
     /ctx/build_scripts/shared/build-prep.sh && \
     /ctx/build_scripts/base/01-packages.sh
 
-# Bring in Homebrew (ublue-os/brew)
 COPY --from=brew /system_files /system_files
 
-# NVIDIA (conditional)
 RUN --mount=type=tmpfs,dst=/boot \
     --mount=type=tmpfs,dst=/var \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache/libdnf5 \
     bash -c 'if [[ "${NVIDIA}" == "true" ]]; then /ctx/build_scripts/base/04-nvidia.sh; else echo "Skipping NVIDIA"; fi'
 
-### Offline stage
 RUN --network=none \
     --mount=type=tmpfs,dst=/boot \
     --mount=type=tmpfs,dst=/var/log \
