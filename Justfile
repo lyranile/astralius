@@ -358,6 +358,58 @@ rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_r
 [group('Build Virtal Machine Image')]
 rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "disk_config/disk.toml")
 
+# Build a bootable ISO using Bootc Image Builder (BIB)
+# Fedora repos and GPG keys are in system_files/ and ship with the image,
+# so BIB can resolve boot packages directly from the published image.
+[group('Build Virtal Machine Image')]
+build-iso $target_image=("localhost/" + image_name) $tag=default_tag:
+    #!/usr/bin/env bash
+    set -eoux pipefail
+
+    sudo podman run \
+        --rm \
+        -i \
+        --privileged \
+        --pull=newer \
+        --net=host \
+        --security-opt label=type=unconfined_t \
+        -v ./disk_config/iso.toml:/config.toml:ro \
+        -v $(pwd)/output:/output \
+        -v /var/lib/containers/storage:/var/lib/containers/storage \
+        quay.io/centos-bootc/bootc-image-builder@sha256:dab86ee6b46dcade411b37f4e70b07d93b6a06da0dbfec6fe89247a220e0d9f8 \
+        --type iso \
+        --rootfs btrfs \
+        --use-librepo=True \
+        --installer-payload-ref "${target_image}:${tag}" \
+        "${target_image}:${tag}"
+
+    sudo chown -R $USER:$USER output
+
+# Rebuild a bootable ISO using Bootc Image Builder (BIB)
+[group('Build Virtal Machine Image')]
+rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag:
+    #!/usr/bin/env bash
+    set -eoux pipefail
+
+    sudo podman run \
+        --rm \
+        -i \
+        --privileged \
+        --pull=newer \
+        --net=host \
+        --security-opt label=type=unconfined_t \
+        -v ./disk_config/iso.toml:/config.toml:ro \
+        -v $(pwd)/output:/output \
+        -v /var/lib/containers/storage:/var/lib/containers/storage \
+        quay.io/centos-bootc/bootc-image-builder@sha256:dab86ee6b46dcade411b37f4e70b07d93b6a06da0dbfec6fe89247a220e0d9f8 \
+        --type iso \
+        --rootfs btrfs \
+        --use-librepo=True \
+        --installer-payload-ref "${target_image}:${tag}" \
+        "${target_image}:${tag}"
+
+    sudo chown -R $USER:$USER output
+
 # Run a virtual machine with the specified image type and configuration
 _run-vm $target_image $tag $type $config:
     #!/usr/bin/env bash
@@ -408,7 +460,9 @@ run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_ru
 [group('Run Virtal Machine')]
 run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "disk_config/disk.toml")
 
-# (live ISO runs via Titanoboa, see iso/Containerfile)
+# Run a virtual machine from an ISO image
+[group('Run Virtal Machine')]
+run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag $config="disk_config/iso.toml": && (_run-vm target_image tag "iso" config)
 
 # Run a virtual machine using systemd-vmspawn
 [group('Run Virtal Machine')]

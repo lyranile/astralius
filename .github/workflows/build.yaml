@@ -1,20 +1,19 @@
----
 name: Build container image
 on:
   pull_request:
     branches:
       - main
   schedule:
-    - cron: '05 10 * * *'  # 10:05am UTC everyday
+    - cron: "05 10 * * *"
   push:
     branches:
       - main
     paths-ignore:
-      - '**/README.md'
+      - "**/README.md"
   workflow_dispatch:
 
 env:
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.brand_name}}-${{ inputs.stream_name }}
@@ -24,22 +23,32 @@ jobs:
   build_push:
     name: Build and push image
     runs-on: ubuntu-26.04
-
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: nvidia
+            nvidia_variant: open
+            image_suffix: "-nvidia"
+          - variant: none
+            nvidia_variant: none
+            image_suffix: ""
     permissions:
       contents: read
       packages: write
       id-token: write
 
     steps:
-      # These stage versions are pinned by https://github.com/renovatebot/renovate
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
 
       - name: Install just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 #v4.0.0
+        uses: extractions/setup-just@v4.0.0
 
       - name: Check Just Syntax
         shell: bash
@@ -50,23 +59,29 @@ jobs:
         id: image-name
         run: |
           IMAGE_NAME=$(just image_name)
-
+          IMAGE_NAME="${IMAGE_NAME}${{ matrix.image_suffix }}"
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+          echo "NVIDIA_VARIANT=${{ matrix.nvidia_variant }}" >> $GITHUB_ENV
 
       - name: Default Tag
         id: gen-default-tag
         run: |
           DEFAULT_TAG=$(just generate-default-tag)
-
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> $GITHUB_ENV
 
       - name: Prepare environment
         run: |
-          # Lowercase the image uri https://github.com/macbre/push-to-ghcr/issues/12
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV
 
-      # This actually builds the container image
+      - name: Restore build cache
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.local/share/containers
+          key: podman-${{ runner.os }}-${{ hashFiles('Containerfile','build_scripts/**','system_files/**') }}
+          restore-keys: |
+            podman-${{ runner.os }}-
+
       - name: Build Image
         id: build-image
         run: |
@@ -74,7 +89,6 @@ jobs:
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
 
-      # This is optional, this provides smaller delta updates
       - name: Rechunk with rpm-ostree
         id: rechunk
         run: |
@@ -82,25 +96,12 @@ jobs:
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
 
-      # If you are feeling adventurous, use the new distro agnostic rechunker
-      # https://github.com/coreos/chunkah
-      # You can delete the Rechunk with rpm-ostree portion then if you use this
-      #- name: Rechunk with Chunkah
-      #  id: rechunk
-      #  run: |
-      #    just rechunk \
-      #      ${IMAGE_NAME} \
-      #      ${DEFAULT_TAG}
-
       - name: Generate Build Tags
         id: gen-build-tags
         run: |
           alias_tags="$(just generate-build-tags \
                         ${IMAGE_NAME} \
                         ${DEFAULT_TAG})"
-
-          echo "Tags for this Action..."
-          echo "${alias_tags}"
           echo "alias_tags=${alias_tags}" >> $GITHUB_OUTPUT
 
       - name: Tag Image
@@ -113,11 +114,9 @@ jobs:
             "${DEFAULT_TAG}" \
             "${ALIAS_TAGS}"
 
-      # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
-      # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        uses: docker/login-action@v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -133,21 +132,14 @@ jobs:
           for tag in ${ALIAS_TAGS}; do
             podman push --digestfile=/tmp/digestfile ${IMAGE_NAME}:${tag} ${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}
           done
-
           digest=$(< /tmp/digestfile)
-
           echo "digest=${digest}" >> $GITHUB_OUTPUT
 
-      # This section is optional and only needs to be enabled if you plan on distributing
-      # your project for others to consume. You will need to create a public and private key
-      # using Cosign and save the private key as a repository secret in Github for this workflow
-      # to consume. For more details, review the image signing section of the README.
       - name: Install Cosign
-        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        uses: sigstore/cosign-installer@v4.1.3
         with:
-          # be careful when upgrading major versions
-          cosign-release: 'v3.1.2'
+          cosign-release: "v3.1.2"
 
       - name: Sign container image
         id: sign-image
@@ -157,8 +149,4 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
           DIGEST: ${{ steps.push-image.outputs.digest }}
         run: |
-          # https://github.com/containers/container-libs/issues/388
-          # https://github.com/coreos/rpm-ostree/issues/5509
-          # use old bundle format, so we can use newer cosign 3.X.X instead of 2.X.X
           cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
-

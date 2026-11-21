@@ -3,5 +3,12 @@ gtk-theme='adw-gtk3'
 icon-theme='Papirus'
 color-scheme='prefer-dark'
 
+[org.gnome.desktop.wm.preferences]
+button-layout='appmenu:minimize,maximize,close'
+
+[org.gnome.desktop.background]
+picture-uri='file:///usr/share/backgrounds/astralius/default.svg'
+picture-uri-dark='file:///usr/share/backgrounds/astralius/default.svg'
+
 [org.gnome.shell]
 favorite-apps=['io.github.kolunmi.Bazaar.desktop', 'org.gnome.Nautilus.desktop', 'com.mitchellh.ghostty.desktop']
