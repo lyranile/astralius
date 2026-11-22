@@ -12,6 +12,7 @@ export bib_image := env("BIB_IMAGE")
 alias build-vm := build-qcow2
 alias rebuild-vm := rebuild-qcow2
 alias run-vm := run-vm-qcow2
+alias run-iso := run-vm-iso
 
 [private]
 default:
@@ -362,9 +363,11 @@ rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_reb
 # Fedora repos and GPG keys are in system_files/ and ship with the image,
 # so BIB can resolve boot packages directly from the published image.
 [group('Build Virtal Machine Image')]
-build-iso $target_image=("localhost/" + image_name) $tag=default_tag:
+build-iso $target_image=("localhost/" + image_name) $tag=default_tag: (_rootful_load_image target_image tag)
     #!/usr/bin/env bash
     set -eoux pipefail
+
+    mkdir -p output
 
     sudo podman run \
         --rm \
@@ -372,7 +375,7 @@ build-iso $target_image=("localhost/" + image_name) $tag=default_tag:
         --privileged \
         --pull=newer \
         --net=host \
-        --security-opt label=type=unconfined_t \
+        --security-opt label=type:unconfined_t \
         -v ./disk_config/iso.toml:/config.toml:ro \
         -v $(pwd)/output:/output \
         -v /var/lib/containers/storage:/var/lib/containers/storage \
@@ -387,9 +390,11 @@ build-iso $target_image=("localhost/" + image_name) $tag=default_tag:
 
 # Rebuild a bootable ISO using Bootc Image Builder (BIB)
 [group('Build Virtal Machine Image')]
-rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag:
+rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag: (build target_image tag) && (_rootful_load_image target_image tag)
     #!/usr/bin/env bash
     set -eoux pipefail
+
+    mkdir -p output
 
     sudo podman run \
         --rm \
@@ -397,7 +402,7 @@ rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag:
         --privileged \
         --pull=newer \
         --net=host \
-        --security-opt label=type=unconfined_t \
+        --security-opt label=type:unconfined_t \
         -v ./disk_config/iso.toml:/config.toml:ro \
         -v $(pwd)/output:/output \
         -v /var/lib/containers/storage:/var/lib/containers/storage \
@@ -416,9 +421,10 @@ _run-vm $target_image $tag $type $config:
     set -eoux pipefail
 
     # Determine the image file based on the type
-    image_file="output/${type}/disk.${type}"
-    if [[ $type == iso ]]; then
-        image_file="output/bootiso/install.iso"
+    if [[ "${type}" == "iso" ]]; then
+        image_file="$(find output -type f -iname '*.iso' 2>/dev/null | head -n1 || true)"
+    else
+        image_file="output/${type}/disk.${type}"
     fi
 
     # Build the image if it does not exist
@@ -471,7 +477,10 @@ spawn-vm rebuild="0" type="qcow2" ram="6G":
 
     set -euo pipefail
 
-    [ "{{ rebuild }}" -eq 1 ] && echo "Rebuilding the ISO" && just build-vm {{ rebuild }} {{ type }}
+    if [[ "{{ rebuild }}" -eq 1 ]]; then
+        echo "Rebuilding the {{ type }} image"
+        just "build-{{ type }}"
+    fi
 
     systemd-vmspawn \
       -M "bootc-image" \
