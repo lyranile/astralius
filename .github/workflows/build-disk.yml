@@ -105,7 +105,7 @@ jobs:
             --privileged \
             --pull=newer \
             --net=host \
-            --security-opt label=type=unconfined_t \
+            --security-opt label=type:unconfined_t \
             -v ./rpm-gpg:/etc/pki/rpm-gpg:ro,Z \
             -v ./rpm-gpg:/usr/share/pki/rpm-gpg:ro,Z \
             -v "$PWD/$CONFIG:/config.toml:ro" \
